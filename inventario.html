@@ -11,7 +11,10 @@
 <div class="container">
   <h1>Fazer Inventário</h1>
 
+  <div id="reader" style="width:100%; margin:20px 0;"></div>
+
   <input type="text" id="codigo" placeholder="Bipe ou digite o código" autofocus>
+
   <button onclick="salvarCodigo()" class="btn">Salvar Código</button>
 
   <p id="mensagem"></p>
@@ -19,6 +22,24 @@
   <a href="index.html" class="voltar">Voltar</a>
 </div>
 
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="js/app.js"></script>
+
+<script>
+  function iniciarLeitor() {
+    const scanner = new Html5QrcodeScanner("reader", {
+      fps: 10,
+      qrbox: 250
+    });
+
+    scanner.render(function(decodedText) {
+      document.getElementById("codigo").value = decodedText;
+      salvarCodigo();
+    });
+  }
+
+  iniciarLeitor();
+</script>
+
 </body>
 </html>
