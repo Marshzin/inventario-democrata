@@ -1,44 +1,117 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fazer Inventário</title>
-  <link rel="stylesheet" href="css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fazer Inventário</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+#reader {
+    width: 100%;
+    margin: 20px auto;
+}
+
+#codigo {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    margin-top: 15px;
+    box-sizing: border-box;
+}
+
+.info {
+    margin-top: 15px;
+    color: #d6a354;
+    font-weight: bold;
+}
+</style>
+
 </head>
 <body>
 
 <div class="container">
-  <h1>Fazer Inventário</h1>
 
-  <div id="reader" style="width:100%; margin:20px 0;"></div>
+    <h1>Fazer Inventário</h1>
 
-  <input type="text" id="codigo" placeholder="Bipe ou digite o código" autofocus>
+    <p>Aponte a câmera para o código de barras</p>
 
-  <button onclick="salvarCodigo()" class="btn">Salvar Código</button>
+    <div id="reader"></div>
 
-  <p id="mensagem"></p>
+    <input
+        type="text"
+        id="codigo"
+        placeholder="Código será preenchido automaticamente">
 
-  <a href="index.html" class="voltar">Voltar</a>
+    <button class="btn" onclick="salvarCodigo()">
+        Salvar Código
+    </button>
+
+    <p id="mensagem" class="info"></p>
+
+    <a href="index.html" class="voltar">
+        Voltar
+    </a>
+
 </div>
 
-<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="js/app.js"></script>
 
 <script>
-  function iniciarLeitor() {
-    const scanner = new Html5QrcodeScanner("reader", {
-      fps: 10,
-      qrbox: 250
-    });
 
-    scanner.render(function(decodedText) {
-      document.getElementById("codigo").value = decodedText;
-      salvarCodigo();
-    });
-  }
+function iniciarLeitor() {
 
-  iniciarLeitor();
+    Html5Qrcode.getCameras()
+        .then(cameras => {
+
+            if (cameras.length === 0) {
+                document.getElementById("mensagem").innerText =
+                    "Nenhuma câmera encontrada.";
+                return;
+            }
+
+            const html5QrCode = new Html5Qrcode("reader");
+
+            html5QrCode.start(
+                {
+                    facingMode: "environment"
+                },
+                {
+                    fps: 10,
+                    qrbox: {
+                        width: 250,
+                        height: 120
+                    }
+                },
+                (codigoLido) => {
+
+                    document.getElementById("codigo").value = codigoLido;
+
+                    salvarCodigo();
+
+                },
+                (erro) => {
+                    // Ignora erros de leitura
+                }
+            );
+
+        })
+        .catch(err => {
+
+            document.getElementById("mensagem").innerText =
+                "Permita o acesso à câmera.";
+
+            console.error(err);
+
+        });
+
+}
+
+window.onload = iniciarLeitor;
+
 </script>
 
 </body>
