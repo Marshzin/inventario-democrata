@@ -4,9 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Fazer Inventário</title>
+
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
+
+  <style>
+    #video {
+      width: 100%;
+      border-radius: 10px;
+      margin: 20px 0;
+      transform: scale(1.15);
+    }
+
+    .video-box {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+  </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -14,18 +31,14 @@
 
   <p>Aponte a câmera para o código de barras</p>
 
-  <select id="cameraSelect"></select>
-
-  <button onclick="trocarCamera()" class="btn">
-    Trocar Câmera
-  </button>
-
-  <div id="reader" style="width:100%; margin:20px auto;"></div>
+  <div class="video-box">
+    <video id="video" autoplay muted playsinline></video>
+  </div>
 
   <input
     type="text"
     id="codigo"
-    placeholder="Código será preenchido automaticamente">
+    placeholder="Código lido">
 
   <button onclick="salvarCodigo()" class="btn">
     Salvar Código
@@ -39,117 +52,75 @@
 <script src="js/app.js"></script>
 
 <script>
-let html5QrCode;
-let cameras = [];
-let cameraAtual = "";
+const codeReader = new ZXing.BrowserMultiFormatReader();
+
 let bloqueado = false;
 
-async function carregarCameras() {
+async function iniciarLeitor() {
   try {
-    cameras = await Html5Qrcode.getCameras();
+    const devices = await codeReader.listVideoInputDevices();
 
-    const select = document.getElementById("cameraSelect");
-    select.innerHTML = "";
-
-    if (!cameras || cameras.length === 0) {
+    if (!devices || devices.length === 0) {
       document.getElementById("mensagem").innerText =
         "Nenhuma câmera encontrada.";
       return;
     }
 
-    cameras.forEach((camera, index) => {
-      const option = document.createElement("option");
-      option.value = camera.id;
-      option.text = camera.label || "Câmera " + (index + 1);
-      select.appendChild(option);
+    const camera0 = devices[0].deviceId;
+
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        deviceId: { exact: camera0 },
+        focusMode: "continuous"
+      }
     });
 
-    let cameraPrincipal = cameras.find(camera => {
-      const nome = camera.label.toLowerCase();
+    const video = document.getElementById("video");
+    video.srcObject = stream;
+    await video.play();
 
-      return (
-        nome.includes("back") ||
-        nome.includes("rear") ||
-        nome.includes("traseira") ||
-        nome.includes("camera 1") ||
-        nome.includes("wide")
-      ) &&
-      !nome.includes("ultra") &&
-      !nome.includes("0.5");
-    });
+    const track = stream.getVideoTracks()[0];
+    const capabilities = track.getCapabilities
+      ? track.getCapabilities()
+      : {};
 
-    if (!cameraPrincipal) {
-      cameraPrincipal = cameras[cameras.length - 1];
+    if (capabilities.zoom) {
+      await track.applyConstraints({
+        advanced: [{ zoom: 2 }]
+      });
     }
 
-    cameraAtual = cameraPrincipal.id;
-    select.value = cameraAtual;
-
-    iniciarCamera(cameraAtual);
-
-  } catch (erro) {
-    document.getElementById("mensagem").innerText =
-      "Permita o acesso à câmera no navegador.";
-    console.error(erro);
-  }
-}
-
-async function iniciarCamera(cameraId) {
-  try {
-    if (!html5QrCode) {
-      html5QrCode = new Html5Qrcode("reader");
-    }
-
-    if (html5QrCode.isScanning) {
-      await html5QrCode.stop();
-    }
-
-    await html5QrCode.start(
-      cameraId,
-      {
-        fps: 10,
-        qrbox: {
-          width: 280,
-          height: 140
-        }
-      },
-      codigoLido => {
+    codeReader.decodeFromVideoElement(video, (result, err) => {
+      if (result) {
         if (bloqueado) return;
 
         bloqueado = true;
 
-        document.getElementById("codigo").value = codigoLido;
+        const codigo = result.text;
+
+        document.getElementById("codigo").value = codigo;
         salvarCodigo();
 
         document.getElementById("mensagem").innerText =
-          "Código registrado: " + codigoLido;
+          "Código lido: " + codigo;
 
         setTimeout(() => {
           bloqueado = false;
         }, 2000);
-      },
-      erro => {
-        // Ignora erros de leitura
       }
-    );
+    });
 
     document.getElementById("mensagem").innerText =
       "Leitor pronto.";
 
   } catch (erro) {
     document.getElementById("mensagem").innerText =
-      "Erro ao iniciar câmera.";
+      "Erro ao acessar a câmera. Verifique a permissão do navegador.";
     console.error(erro);
   }
 }
 
-function trocarCamera() {
-  const select = document.getElementById("cameraSelect");
-  cameraAtual = select.value;
-  iniciarCamera(cameraAtual);
-}
-
-window.onload = carregarCameras;
+window.onload = iniciarLeitor;
 </script>
 
 </body>
