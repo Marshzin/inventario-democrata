@@ -1,126 +1,187 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fazer Inventário</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
+<title>Inventário Democrata</title>
 
-  <style>
-    #video {
-      width: 100%;
-      border-radius: 10px;
-      margin: 20px 0;
-      transform: scale(1.15);
-    }
+<link rel="stylesheet" href="css/style.css">
 
-    .video-box {
-      width: 100%;
-      overflow: hidden;
-      border-radius: 10px;
-    }
-  </style>
+<script src="https://unpkg.com/@zxing/library@latest"></script>
+
+<style>
+
+.video-container{
+    width:100%;
+    overflow:hidden;
+    border-radius:10px;
+    margin:20px 0;
+}
+
+#video{
+    width:100%;
+    transform:scale(1.15);
+}
+
+#codigo{
+    width:100%;
+    padding:15px;
+    font-size:18px;
+    margin-top:15px;
+    box-sizing:border-box;
+}
+
+</style>
+
 </head>
-
 <body>
 
 <div class="container">
-  <h1>Fazer Inventário</h1>
 
-  <p>Aponte a câmera para o código de barras</p>
+    <h1>Fazer Inventário</h1>
 
-  <div class="video-box">
-    <video id="video" autoplay muted playsinline></video>
-  </div>
+    <p>Aponte a câmera para o código de barras</p>
 
-  <input
-    type="text"
-    id="codigo"
-    placeholder="Código lido">
+    <div class="video-container">
+        <video
+            id="video"
+            autoplay
+            muted
+            playsinline>
+        </video>
+    </div>
 
-  <button onclick="salvarCodigo()" class="btn">
-    Salvar Código
-  </button>
+    <input
+        type="text"
+        id="codigo"
+        placeholder="Código lido automaticamente">
 
-  <p id="mensagem"></p>
+    <button
+        class="btn"
+        onclick="salvarCodigo()">
+        Salvar Código
+    </button>
 
-  <a href="index.html" class="voltar">Voltar</a>
+    <p id="mensagem"></p>
+
+    <a href="index.html" class="voltar">
+        Voltar
+    </a>
+
 </div>
 
 <script src="js/app.js"></script>
 
 <script>
-const codeReader = new ZXing.BrowserMultiFormatReader();
+
+const codeReader =
+    new ZXing.BrowserMultiFormatReader();
 
 let bloqueado = false;
 
-async function iniciarLeitor() {
-  try {
-    const devices = await codeReader.listVideoInputDevices();
+async function iniciarLeitor(){
 
-    if (!devices || devices.length === 0) {
-      document.getElementById("mensagem").innerText =
-        "Nenhuma câmera encontrada.";
-      return;
-    }
+    try{
 
-    const camera0 = devices[0].deviceId;
+        const stream =
+            await navigator.mediaDevices.getUserMedia({
 
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        deviceId: { exact: camera0 },
-        focusMode: "continuous"
-      }
-    });
+                video:{
+                    facingMode:{
+                        ideal:"environment"
+                    }
+                }
 
-    const video = document.getElementById("video");
-    video.srcObject = stream;
-    await video.play();
+            });
 
-    const track = stream.getVideoTracks()[0];
-    const capabilities = track.getCapabilities
-      ? track.getCapabilities()
-      : {};
+        const video =
+            document.getElementById("video");
 
-    if (capabilities.zoom) {
-      await track.applyConstraints({
-        advanced: [{ zoom: 2 }]
-      });
-    }
+        video.srcObject = stream;
 
-    codeReader.decodeFromVideoElement(video, (result, err) => {
-      if (result) {
-        if (bloqueado) return;
+        await video.play();
 
-        bloqueado = true;
+        const track =
+            stream.getVideoTracks()[0];
 
-        const codigo = result.text;
+        const capabilities =
+            track.getCapabilities
+                ? track.getCapabilities()
+                : {};
 
-        document.getElementById("codigo").value = codigo;
-        salvarCodigo();
+        if(capabilities.zoom){
+
+            try{
+
+                await track.applyConstraints({
+                    advanced:[
+                        {
+                            zoom:2
+                        }
+                    ]
+                });
+
+            }catch(e){
+                console.log("Zoom não suportado");
+            }
+
+        }
+
+        codeReader.decodeFromVideoElement(
+
+            video,
+
+            (result,err)=>{
+
+                if(result){
+
+                    if(bloqueado) return;
+
+                    bloqueado = true;
+
+                    const codigo =
+                        result.getText
+                        ? result.getText()
+                        : result.text;
+
+                    document.getElementById("codigo").value =
+                        codigo;
+
+                    salvarCodigo();
+
+                    document.getElementById("mensagem").innerText =
+                        "Código registrado: " + codigo;
+
+                    setTimeout(()=>{
+
+                        bloqueado = false;
+
+                    },2000);
+
+                }
+
+            }
+
+        );
 
         document.getElementById("mensagem").innerText =
-          "Código lido: " + codigo;
+            "Leitor pronto.";
 
-        setTimeout(() => {
-          bloqueado = false;
-        }, 2000);
-      }
-    });
+    }
+    catch(erro){
 
-    document.getElementById("mensagem").innerText =
-      "Leitor pronto.";
+        console.error(erro);
 
-  } catch (erro) {
-    document.getElementById("mensagem").innerText =
-      "Erro ao acessar a câmera. Verifique a permissão do navegador.";
-    console.error(erro);
-  }
+        document.getElementById("mensagem").innerText =
+            "Permita acesso à câmera.";
+
+    }
+
 }
 
 window.onload = iniciarLeitor;
+
 </script>
 
 </body>
