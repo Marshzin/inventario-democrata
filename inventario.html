@@ -1,187 +1,137 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fazer Inventário</title>
 
-<title>Inventário Democrata</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/@zxing/library@latest"></script>
 
-<link rel="stylesheet" href="css/style.css">
+  <style>
+    .video-container {
+      width: 100%;
+      overflow: hidden;
+      border-radius: 10px;
+      margin: 20px 0;
+      background: #000;
+    }
 
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+    #video {
+      width: 100%;
+      transform: scale(1.15);
+    }
 
-<style>
+    #modalSucesso {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
 
-.video-container{
-    width:100%;
-    overflow:hidden;
-    border-radius:10px;
-    margin:20px 0;
-}
-
-#video{
-    width:100%;
-    transform:scale(1.15);
-}
-
-#codigo{
-    width:100%;
-    padding:15px;
-    font-size:18px;
-    margin-top:15px;
-    box-sizing:border-box;
-}
-
-</style>
-
+    .modal-box {
+      background: #fff;
+      color: #111;
+      padding: 25px;
+      border-radius: 12px;
+      text-align: center;
+      width: 85%;
+      max-width: 320px;
+    }
+  </style>
 </head>
+
 <body>
 
 <div class="container">
+  <h1>Fazer Inventário</h1>
 
-    <h1>Fazer Inventário</h1>
+  <p>Aponte a câmera traseira para o código de barras</p>
 
-    <p>Aponte a câmera para o código de barras</p>
+  <div class="video-container">
+    <video id="video" autoplay muted playsinline></video>
+  </div>
 
-    <div class="video-container">
-        <video
-            id="video"
-            autoplay
-            muted
-            playsinline>
-        </video>
-    </div>
+  <input type="text" id="codigo" placeholder="Código lido automaticamente">
 
-    <input
-        type="text"
-        id="codigo"
-        placeholder="Código lido automaticamente">
+  <button class="btn" onclick="salvarCodigo()">Salvar Código</button>
 
-    <button
-        class="btn"
-        onclick="salvarCodigo()">
-        Salvar Código
-    </button>
+  <p id="mensagem"></p>
 
-    <p id="mensagem"></p>
+  <a href="index.html" class="voltar">Voltar</a>
+</div>
 
-    <a href="index.html" class="voltar">
-        Voltar
-    </a>
-
+<div id="modalSucesso">
+  <div class="modal-box">
+    <h2>Código lido com sucesso!</h2>
+    <p id="codigoModal"></p>
+    <button class="btn" onclick="fecharModal()">OK</button>
+  </div>
 </div>
 
 <script src="js/app.js"></script>
 
 <script>
-
-const codeReader =
-    new ZXing.BrowserMultiFormatReader();
+const codeReader = new ZXing.BrowserMultiFormatReader();
 
 let bloqueado = false;
+let ultimoCodigo = "";
 
-async function iniciarLeitor(){
+async function iniciarLeitor() {
+  try {
+    document.getElementById("mensagem").innerText = "Iniciando câmera...";
 
-    try{
-
-        const stream =
-            await navigator.mediaDevices.getUserMedia({
-
-                video:{
-                    facingMode:{
-                        ideal:"environment"
-                    }
-                }
-
-            });
-
-        const video =
-            document.getElementById("video");
-
-        video.srcObject = stream;
-
-        await video.play();
-
-        const track =
-            stream.getVideoTracks()[0];
-
-        const capabilities =
-            track.getCapabilities
-                ? track.getCapabilities()
-                : {};
-
-        if(capabilities.zoom){
-
-            try{
-
-                await track.applyConstraints({
-                    advanced:[
-                        {
-                            zoom:2
-                        }
-                    ]
-                });
-
-            }catch(e){
-                console.log("Zoom não suportado");
-            }
-
+    await codeReader.decodeFromConstraints(
+      {
+        video: {
+          facingMode: { ideal: "environment" },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
         }
+      },
+      "video",
+      (result, err) => {
+        if (result) {
+          const codigo = result.text || result.getText();
 
-        codeReader.decodeFromVideoElement(
+          if (bloqueado || codigo === ultimoCodigo) return;
 
-            video,
+          bloqueado = true;
+          ultimoCodigo = codigo;
 
-            (result,err)=>{
+          document.getElementById("codigo").value = codigo;
+          salvarCodigo();
 
-                if(result){
+          document.getElementById("codigoModal").innerText =
+            "Código: " + codigo;
 
-                    if(bloqueado) return;
+          document.getElementById("modalSucesso").style.display = "flex";
+        }
+      }
+    );
 
-                    bloqueado = true;
+    document.getElementById("mensagem").innerText = "Leitor pronto.";
 
-                    const codigo =
-                        result.getText
-                        ? result.getText()
-                        : result.text;
+  } catch (erro) {
+    document.getElementById("mensagem").innerText =
+      "Erro ao abrir câmera. Verifique a permissão do navegador.";
+    console.error(erro);
+  }
+}
 
-                    document.getElementById("codigo").value =
-                        codigo;
+function fecharModal() {
+  document.getElementById("modalSucesso").style.display = "none";
 
-                    salvarCodigo();
-
-                    document.getElementById("mensagem").innerText =
-                        "Código registrado: " + codigo;
-
-                    setTimeout(()=>{
-
-                        bloqueado = false;
-
-                    },2000);
-
-                }
-
-            }
-
-        );
-
-        document.getElementById("mensagem").innerText =
-            "Leitor pronto.";
-
-    }
-    catch(erro){
-
-        console.error(erro);
-
-        document.getElementById("mensagem").innerText =
-            "Permita acesso à câmera.";
-
-    }
-
+  setTimeout(() => {
+    bloqueado = false;
+    ultimoCodigo = "";
+  }, 2000);
 }
 
 window.onload = iniciarLeitor;
-
 </script>
 
 </body>
