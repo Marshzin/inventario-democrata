@@ -1,150 +1,156 @@
-<script>
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fazer Inventário</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+<body>
 
+<div class="container">
+  <h1>Fazer Inventário</h1>
+
+  <p>Aponte a câmera para o código de barras</p>
+
+  <select id="cameraSelect"></select>
+
+  <button onclick="trocarCamera()" class="btn">
+    Trocar Câmera
+  </button>
+
+  <div id="reader" style="width:100%; margin:20px auto;"></div>
+
+  <input
+    type="text"
+    id="codigo"
+    placeholder="Código será preenchido automaticamente">
+
+  <button onclick="salvarCodigo()" class="btn">
+    Salvar Código
+  </button>
+
+  <p id="mensagem"></p>
+
+  <a href="index.html" class="voltar">Voltar</a>
+</div>
+
+<script src="js/app.js"></script>
+
+<script>
 let html5QrCode;
 let cameras = [];
 let cameraAtual = "";
 let bloqueado = false;
 
 async function carregarCameras() {
-
-    try {
-
-        cameras = await Html5Qrcode.getCameras();
-
-        const select = document.getElementById("cameraSelect");
-        select.innerHTML = "";
-
-        if (!cameras || cameras.length === 0) {
-
-            document.getElementById("mensagem").innerText =
-                "Nenhuma câmera encontrada.";
-
-            return;
-        }
-
-        cameras.forEach((camera, index) => {
-
-            const option = document.createElement("option");
-
-            option.value = camera.id;
-            option.text = camera.label || "Câmera " + (index + 1);
-
-            select.appendChild(option);
-
-        });
-
-        let cameraPrincipal = cameras.find(camera => {
-
-            const nome = camera.label.toLowerCase();
-
-            return (
-                nome.includes("back") ||
-                nome.includes("rear") ||
-                nome.includes("traseira") ||
-                nome.includes("camera 1") ||
-                nome.includes("wide")
-            ) &&
-            !nome.includes("ultra") &&
-            !nome.includes("0.5");
-
-        });
-
-        if (!cameraPrincipal) {
-            cameraPrincipal = cameras[cameras.length - 1];
-        }
-
-        cameraAtual = cameraPrincipal.id;
-
-        select.value = cameraAtual;
-
-        iniciarCamera(cameraAtual);
-
-    } catch (erro) {
-
-        document.getElementById("mensagem").innerText =
-            "Permita o acesso à câmera.";
-
-        console.error(erro);
-
-    }
-
-}
-
-async function iniciarCamera(cameraId) {
-
-    try {
-
-        if (!html5QrCode) {
-            html5QrCode = new Html5Qrcode("reader");
-        }
-
-        if (html5QrCode.isScanning) {
-            await html5QrCode.stop();
-        }
-
-        await html5QrCode.start(
-
-            cameraId,
-
-            {
-                fps: 10,
-                qrbox: {
-                    width: 280,
-                    height: 140
-                }
-            },
-
-            codigoLido => {
-
-                if (bloqueado) return;
-
-                bloqueado = true;
-
-                document.getElementById("codigo").value = codigoLido;
-
-                salvarCodigo();
-
-                document.getElementById("mensagem").innerText =
-                    "Código registrado: " + codigoLido;
-
-                setTimeout(() => {
-
-                    bloqueado = false;
-
-                }, 2000);
-
-            },
-
-            erro => {
-                // ignora erros de leitura
-            }
-
-        );
-
-        document.getElementById("mensagem").innerText =
-            "Leitor pronto.";
-
-    } catch (erro) {
-
-        document.getElementById("mensagem").innerText =
-            "Erro ao iniciar câmera.";
-
-        console.error(erro);
-
-    }
-
-}
-
-function trocarCamera() {
+  try {
+    cameras = await Html5Qrcode.getCameras();
 
     const select = document.getElementById("cameraSelect");
+    select.innerHTML = "";
 
-    cameraAtual = select.value;
+    if (!cameras || cameras.length === 0) {
+      document.getElementById("mensagem").innerText =
+        "Nenhuma câmera encontrada.";
+      return;
+    }
+
+    cameras.forEach((camera, index) => {
+      const option = document.createElement("option");
+      option.value = camera.id;
+      option.text = camera.label || "Câmera " + (index + 1);
+      select.appendChild(option);
+    });
+
+    let cameraPrincipal = cameras.find(camera => {
+      const nome = camera.label.toLowerCase();
+
+      return (
+        nome.includes("back") ||
+        nome.includes("rear") ||
+        nome.includes("traseira") ||
+        nome.includes("camera 1") ||
+        nome.includes("wide")
+      ) &&
+      !nome.includes("ultra") &&
+      !nome.includes("0.5");
+    });
+
+    if (!cameraPrincipal) {
+      cameraPrincipal = cameras[cameras.length - 1];
+    }
+
+    cameraAtual = cameraPrincipal.id;
+    select.value = cameraAtual;
 
     iniciarCamera(cameraAtual);
 
+  } catch (erro) {
+    document.getElementById("mensagem").innerText =
+      "Permita o acesso à câmera no navegador.";
+    console.error(erro);
+  }
+}
+
+async function iniciarCamera(cameraId) {
+  try {
+    if (!html5QrCode) {
+      html5QrCode = new Html5Qrcode("reader");
+    }
+
+    if (html5QrCode.isScanning) {
+      await html5QrCode.stop();
+    }
+
+    await html5QrCode.start(
+      cameraId,
+      {
+        fps: 10,
+        qrbox: {
+          width: 280,
+          height: 140
+        }
+      },
+      codigoLido => {
+        if (bloqueado) return;
+
+        bloqueado = true;
+
+        document.getElementById("codigo").value = codigoLido;
+        salvarCodigo();
+
+        document.getElementById("mensagem").innerText =
+          "Código registrado: " + codigoLido;
+
+        setTimeout(() => {
+          bloqueado = false;
+        }, 2000);
+      },
+      erro => {
+        // Ignora erros de leitura
+      }
+    );
+
+    document.getElementById("mensagem").innerText =
+      "Leitor pronto.";
+
+  } catch (erro) {
+    document.getElementById("mensagem").innerText =
+      "Erro ao iniciar câmera.";
+    console.error(erro);
+  }
+}
+
+function trocarCamera() {
+  const select = document.getElementById("cameraSelect");
+  cameraAtual = select.value;
+  iniciarCamera(cameraAtual);
 }
 
 window.onload = carregarCameras;
-
 </script>
+
+</body>
+</html>
