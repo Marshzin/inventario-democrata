@@ -6,7 +6,7 @@
   <title>Fazer Inventário</title>
 
   <link rel="stylesheet" href="css/style.css">
-  <script src="https://unpkg.com/@zxing/library@latest"></script>
+  <script src="https://unpkg.com/@zxing/library@0.20.0"></script>
 
   <style>
     .video-box {
@@ -78,36 +78,65 @@
 <script src="js/app.js"></script>
 
 <script>
-const codeReader = new ZXing.BrowserMultiFormatReader();
-
+let codeReader;
 let bloqueado = false;
 
-function iniciarLeitor() {
-  codeReader.decodeFromVideoDevice(
-    null,
-    "video",
-    (result, err) => {
-      if (result) {
-        if (bloqueado) return;
+async function iniciarLeitor() {
+  try {
+    document.getElementById("mensagem").innerText = "Abrindo câmera...";
 
-        bloqueado = true;
+    codeReader = new ZXing.BrowserMultiFormatReader();
 
-        const codigo = result.text;
+    const cameras = await codeReader.listVideoInputDevices();
 
-        document.getElementById("codigo").value = codigo;
-        salvarCodigo();
-
-        document.getElementById("codigoModal").innerText =
-          "Código: " + codigo;
-
-        document.getElementById("modalSucesso").style.display = "flex";
-        document.getElementById("mensagem").innerText =
-          "Código registrado.";
-      }
+    if (!cameras || cameras.length === 0) {
+      document.getElementById("mensagem").innerText = "Nenhuma câmera encontrada.";
+      return;
     }
-  );
 
-  document.getElementById("mensagem").innerText = "Leitor pronto.";
+    let cameraTraseira = cameras.find(camera => {
+      const nome = camera.label.toLowerCase();
+      return (
+        nome.includes("back") ||
+        nome.includes("rear") ||
+        nome.includes("traseira") ||
+        nome.includes("environment")
+      );
+    });
+
+    if (!cameraTraseira) {
+      cameraTraseira = cameras[cameras.length - 1];
+    }
+
+    await codeReader.decodeFromVideoDevice(
+      cameraTraseira.deviceId,
+      "video",
+      (resultado, erro) => {
+        if (resultado) {
+          if (bloqueado) return;
+
+          bloqueado = true;
+
+          const codigo = resultado.text;
+
+          document.getElementById("codigo").value = codigo;
+
+          salvarCodigo();
+
+          document.getElementById("codigoModal").innerText = "Código: " + codigo;
+          document.getElementById("modalSucesso").style.display = "flex";
+          document.getElementById("mensagem").innerText = "Código registrado.";
+        }
+      }
+    );
+
+    document.getElementById("mensagem").innerText = "Leitor pronto.";
+
+  } catch (erro) {
+    console.error(erro);
+    document.getElementById("mensagem").innerText =
+      "Erro ao abrir a câmera. Verifique a permissão do navegador.";
+  }
 }
 
 function fecharModal() {
