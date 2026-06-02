@@ -7,14 +7,13 @@ body {
 
 .container {
   width: 90%;
-  max-width: 420px;
-  margin: 60px auto;
+  max-width: 430px;
+  margin: 40px auto;
   text-align: center;
 }
 
 h1 {
   color: #d6a354;
-  margin-bottom: 10px;
 }
 
 p {
@@ -28,12 +27,13 @@ p {
   margin: 15px 0;
   background: #d6a354;
   color: #111;
-  text-decoration: none;
   border: none;
   border-radius: 10px;
   font-size: 17px;
   font-weight: bold;
+  text-decoration: none;
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .btn-secundario {
@@ -43,19 +43,19 @@ p {
 
 input {
   width: 100%;
-  padding: 16px;
-  margin: 20px 0;
+  padding: 15px;
+  margin: 15px 0;
   border-radius: 10px;
   border: none;
   font-size: 18px;
   box-sizing: border-box;
 }
 
-.voltar {
-  display: block;
-  margin-top: 25px;
-  color: #d6a354;
-  text-decoration: none;
+#reader {
+  width: 100%;
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .item {
@@ -66,8 +66,29 @@ input {
   text-align: left;
 }
 
-#mensagem {
-  margin-top: 15px;
+.voltar {
+  display: block;
   color: #d6a354;
-  font-weight: bold;
+  margin-top: 25px;
+  text-decoration: none;
+}
+
+#modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-box {
+  background: #fff;
+  color: #111;
+  padding: 25px;
+  border-radius: 12px;
+  width: 85%;
+  max-width: 320px;
+  text-align: center;
 }
