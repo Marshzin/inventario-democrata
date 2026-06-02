@@ -1,80 +1,51 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-
-<meta charset="UTF-8">
-
-<meta
-name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>Consultar Inventário</title>
-
-<link
-rel="stylesheet"
-href="css/style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Consultar Inventário</title>
+  <link rel="stylesheet" href="css/style.css">
 </head>
 
 <body>
 
 <div class="container">
 
-<h1>Consultar Inventário</h1>
+  <h1>Consultar Inventário</h1>
 
-<input
-type="text"
-id="pesquisa"
-placeholder="Pesquisar código">
+  <input
+    type="text"
+    id="pesquisa"
+    placeholder="Pesquisar código">
 
-<h3 id="total">
-Total de peças: 0
-</h3>
+  <h3 id="total">Total de peças: 0</h3>
 
-<div id="lista">
+  <div id="lista">
+    <p>Carregando...</p>
+  </div>
 
-<p>Carregando...</p>
+  <button class="btn" onclick="baixarTXT()">
+    Baixar TXT
+  </button>
 
-</div>
+  <button class="btn btn-secundario" onclick="limparInventario()">
+    Limpar Inventário
+  </button>
 
-<button
-class="btn btn-secundario"
-onclick="limparInventario()">
-
-Limpar Inventário
-
-</button>
-
-<a
-href="index.html"
-class="voltar">
-
-Voltar
-
-</a>
+  <a href="index.html" class="voltar">Voltar</a>
 
 </div>
 
 <script type="module">
+  import "./js/app.js";
 
-import "./js/app.js";
-
-window.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
+  window.addEventListener("DOMContentLoaded", () => {
     listarInventario();
 
     document
       .getElementById("pesquisa")
-      .addEventListener(
-        "input",
-        listarInventario
-      );
-
-  }
-);
-
+      .addEventListener("input", listarInventario);
+  });
 </script>
 
 </body>
