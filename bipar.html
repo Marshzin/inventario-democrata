@@ -1,30 +1,65 @@
-<script type="module">
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bipar Produtos</title>
 
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Bipar Produtos</h1>
+  <p>Aponte a câmera para o código de barras iniciado por 78.</p>
+
+  <div id="reader"></div>
+
+  <input type="text" id="codigo" placeholder="Código lido">
+
+  <button class="btn" onclick="salvarManual()">Salvar Manualmente</button>
+
+  <p id="mensagem"></p>
+
+  <a href="index.html" class="voltar">Voltar</a>
+</div>
+
+<div id="modal">
+  <div class="modal-box">
+    <h2>Código lido com sucesso!</h2>
+    <p id="codigoModal"></p>
+
+    <button class="btn" onclick="continuarBipagem()">
+      OK
+    </button>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+
+<script type="module">
 let scanner;
 let bloqueado = false;
 let ultimoCodigo = "";
 
 async function iniciarScanner() {
-
   const reader = document.getElementById("reader");
   const mensagem = document.getElementById("mensagem");
 
   try {
-
     scanner = new Html5Qrcode("reader");
 
     const cameras = await Html5Qrcode.getCameras();
 
     if (!cameras || cameras.length === 0) {
-
       mensagem.innerText = "Nenhuma câmera encontrada.";
       reader.classList.add("leitura-erro");
       return;
-
     }
 
     let cameraPrincipal = cameras.find(camera => {
-
       const nome = camera.label.toLowerCase();
 
       return (
@@ -34,7 +69,6 @@ async function iniciarScanner() {
       ) &&
       !nome.includes("ultra") &&
       !nome.includes("0.5");
-
     });
 
     if (!cameraPrincipal) {
@@ -42,17 +76,13 @@ async function iniciarScanner() {
     }
 
     await scanner.start(
-
       cameraPrincipal.id,
-
       {
         fps: 10,
-
         qrbox: {
           width: 300,
           height: 130
         },
-
         formatsToSupport: [
           Html5QrcodeSupportedFormats.EAN_13,
           Html5QrcodeSupportedFormats.EAN_8,
@@ -62,21 +92,11 @@ async function iniciarScanner() {
           Html5QrcodeSupportedFormats.CODE_39
         ]
       },
-
       async codigoLido => {
-
         if (bloqueado) return;
-
         if (codigoLido === ultimoCodigo) return;
 
-        const reader =
-          document.getElementById("reader");
-
-        const mensagem =
-          document.getElementById("mensagem");
-
         if (!codigoLido.startsWith("78")) {
-
           reader.classList.remove("leitura-ok");
           reader.classList.add("leitura-erro");
 
@@ -84,13 +104,11 @@ async function iniciarScanner() {
             "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
 
           setTimeout(() => {
-
             reader.classList.remove("leitura-erro");
-
+            mensagem.innerText = "";
           }, 1500);
 
           return;
-
         }
 
         ultimoCodigo = codigoLido;
@@ -99,93 +117,60 @@ async function iniciarScanner() {
         reader.classList.remove("leitura-erro");
         reader.classList.add("leitura-ok");
 
-        document.getElementById("codigo").value =
-          codigoLido;
+        document.getElementById("codigo").value = codigoLido;
 
         await window.salvarCodigo(codigoLido);
 
         document.getElementById("codigoModal").innerText =
           "Código: " + codigoLido;
 
-        document.getElementById("modal").style.display =
-          "flex";
+        document.getElementById("modal").style.display = "flex";
 
-        mensagem.innerText =
-          "Produto registrado com sucesso.";
-
+        mensagem.innerText = "Produto registrado com sucesso.";
       }
-
     );
 
     mensagem.innerText = "Leitor pronto.";
 
   } catch (erro) {
-
     console.error(erro);
-
-    mensagem.innerText =
-      "Erro ao abrir câmera.";
-
+    mensagem.innerText = "Erro ao abrir câmera. Permita o acesso no navegador.";
+    reader.classList.add("leitura-erro");
   }
-
 }
 
 window.continuarBipagem = function() {
+  const reader = document.getElementById("reader");
+  const mensagem = document.getElementById("mensagem");
 
-  const reader =
-    document.getElementById("reader");
-
-  const mensagem =
-    document.getElementById("mensagem");
-
-  document.getElementById("modal").style.display =
-    "none";
-
-  document.getElementById("codigo").value =
-    "";
+  document.getElementById("modal").style.display = "none";
+  document.getElementById("codigo").value = "";
 
   reader.classList.remove("leitura-ok");
   reader.classList.remove("leitura-erro");
 
-  mensagem.innerText =
-    "Aguardando 2 segundos...";
+  mensagem.innerText = "Aguardando 2 segundos...";
 
   setTimeout(() => {
-
     bloqueado = false;
     ultimoCodigo = "";
 
-    mensagem.innerText =
-      "Pronto para nova leitura.";
-
+    mensagem.innerText = "Pronto para nova leitura.";
   }, 2000);
-
 };
 
 window.salvarManual = async function() {
-
-  const codigo =
-    document.getElementById("codigo")
-      .value
-      .trim();
-
-  const reader =
-    document.getElementById("reader");
-
-  const mensagem =
-    document.getElementById("mensagem");
+  const codigo = document.getElementById("codigo").value.trim();
+  const reader = document.getElementById("reader");
+  const mensagem = document.getElementById("mensagem");
 
   if (codigo === "") {
-
-    mensagem.innerText =
-      "Digite um código.";
-
+    reader.classList.add("leitura-erro");
+    mensagem.innerText = "Digite um código.";
     return;
-
   }
 
   if (!codigo.startsWith("78")) {
-
     reader.classList.remove("leitura-ok");
     reader.classList.add("leitura-erro");
 
@@ -193,10 +178,12 @@ window.salvarManual = async function() {
       "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
 
     return;
-
   }
 
   await window.salvarCodigo(codigo);
+
+  bloqueado = true;
+  ultimoCodigo = codigo;
 
   reader.classList.remove("leitura-erro");
   reader.classList.add("leitura-ok");
@@ -204,13 +191,13 @@ window.salvarManual = async function() {
   document.getElementById("codigoModal").innerText =
     "Código: " + codigo;
 
-  document.getElementById("modal").style.display =
-    "flex";
+  document.getElementById("modal").style.display = "flex";
 
-  bloqueado = true;
-
+  mensagem.innerText = "Produto registrado com sucesso.";
 };
 
 window.onload = iniciarScanner;
-
 </script>
+
+</body>
+</html>
