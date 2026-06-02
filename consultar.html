@@ -9,13 +9,17 @@
 <body onload="listarInventario()">
 
 <div class="container">
-  <h1>Consultar Inventário</h1>
+  <h1>Consultar</h1>
 
   <input type="text" id="pesquisa" placeholder="Pesquisar código" onkeyup="listarInventario()">
 
+  <h3 id="total"></h3>
+
   <div id="lista"></div>
 
-  <button onclick="limparInventario()" class="btn btn-secundario">Limpar Inventário</button>
+  <button class="btn btn-secundario" onclick="limparInventario()">
+    Limpar Inventário
+  </button>
 
   <a href="index.html" class="voltar">Voltar</a>
 </div>
