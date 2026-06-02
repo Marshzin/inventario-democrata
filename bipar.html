@@ -11,7 +11,7 @@
 
 <div class="container">
   <h1>Bipar Produtos</h1>
-  <p>Aponte a câmera para o código de barras.</p>
+  <p>Aponte a câmera para o código de barras iniciado por 78.</p>
 
   <div id="reader"></div>
 
@@ -56,6 +56,12 @@ function iniciarScanner() {
       ]
     },
     codigoLido => {
+      if (!codigoLido.startsWith("78")) {
+        document.getElementById("mensagem").innerText =
+          "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
+        return;
+      }
+
       if (bloqueado) return;
 
       bloqueado = true;
@@ -63,7 +69,9 @@ function iniciarScanner() {
       document.getElementById("codigo").value = codigoLido;
       salvarCodigo(codigoLido);
 
-      document.getElementById("codigoModal").innerText = "Código: " + codigoLido;
+      document.getElementById("codigoModal").innerText =
+        "Código: " + codigoLido;
+
       document.getElementById("modal").style.display = "flex";
       document.getElementById("mensagem").innerText = "Produto registrado.";
 
@@ -92,7 +100,11 @@ function salvarManual() {
 
   salvarCodigo(codigo);
 
-  document.getElementById("codigoModal").innerText = "Código: " + codigo;
+  if (!codigo.startsWith("78")) return;
+
+  document.getElementById("codigoModal").innerText =
+    "Código: " + codigo;
+
   document.getElementById("modal").style.display = "flex";
 }
 
