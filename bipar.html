@@ -1,272 +1,156 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bipar Produtos</title>
 
-<title>Bipar Produtos</title>
-
-<link rel="stylesheet" href="css/style.css">
-
-<script src="https://unpkg.com/html5-qrcode"></script>
-
-<style>
-
-.mensagem-sucesso{
-    color:#4CAF50;
-    font-weight:bold;
-}
-
-.mensagem-erro{
-    color:#ff4d4d;
-    font-weight:bold;
-}
-
-#reader{
-    width:100%;
-    margin:20px 0;
-    overflow:hidden;
-    border-radius:10px;
-}
-
-#modal{
-    display:none;
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.7);
-    align-items:center;
-    justify-content:center;
-    z-index:9999;
-}
-
-.modal-box{
-    background:white;
-    color:black;
-    padding:25px;
-    border-radius:12px;
-    width:85%;
-    max-width:320px;
-    text-align:center;
-}
-
-</style>
-
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
 
 <body>
 
 <div class="container">
+  <h1>Bipar Produtos</h1>
+  <p>Aponte a câmera para o código de barras.</p>
 
-    <h1>Bipar Produtos</h1>
+  <div id="reader"></div>
 
-    <p>Aponte a câmera para o código de barras.</p>
+  <input type="text" id="codigo" placeholder="Código lido">
 
-    <div id="reader"></div>
+  <button class="btn" onclick="salvarManual()">Salvar Manualmente</button>
 
-    <input
-        type="text"
-        id="codigo"
-        placeholder="Código lido">
+  <p id="mensagem"></p>
 
-    <button
-        class="btn"
-        onclick="salvarManual()">
-
-        Salvar Manualmente
-
-    </button>
-
-    <p id="mensagem"></p>
-
-    <a href="index.html" class="voltar">
-        Voltar
-    </a>
-
+  <a href="index.html" class="voltar">Voltar</a>
 </div>
 
 <div id="modal">
-
-    <div class="modal-box">
-
-        <h2>Código lido com sucesso!</h2>
-
-        <p id="codigoModal"></p>
-
-        <button
-            class="btn"
-            onclick="continuarBipagem()">
-
-            OK
-
-        </button>
-
-    </div>
-
+  <div class="modal-box">
+    <h2>Código lido com sucesso!</h2>
+    <p id="codigoModal"></p>
+    <button class="btn" onclick="continuarBipagem()">OK</button>
+  </div>
 </div>
 
 <script src="js/app.js"></script>
 
 <script>
-
 let scanner;
 let bloqueado = false;
 
-function iniciarScanner(){
+function iniciarScanner() {
+  scanner = new Html5Qrcode("reader");
 
-    scanner = new Html5Qrcode("reader");
+  scanner.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: { width: 300, height: 130 },
+      formatsToSupport: [
+        Html5QrcodeSupportedFormats.EAN_13,
+        Html5QrcodeSupportedFormats.EAN_8,
+        Html5QrcodeSupportedFormats.UPC_A,
+        Html5QrcodeSupportedFormats.UPC_E,
+        Html5QrcodeSupportedFormats.CODE_128,
+        Html5QrcodeSupportedFormats.CODE_39
+      ]
+    },
+    codigoLido => {
+      const reader = document.getElementById("reader");
+      const mensagem = document.getElementById("mensagem");
 
-    scanner.start(
-
-        {
-            facingMode:"environment"
-        },
-
-        {
-            fps:10,
-
-            qrbox:{
-                width:300,
-                height:130
-            },
-
-            formatsToSupport:[
-
-                Html5QrcodeSupportedFormats.EAN_13,
-                Html5QrcodeSupportedFormats.EAN_8,
-                Html5QrcodeSupportedFormats.UPC_A,
-                Html5QrcodeSupportedFormats.UPC_E,
-                Html5QrcodeSupportedFormats.CODE_128,
-                Html5QrcodeSupportedFormats.CODE_39
-
-            ]
-
-        },
-
-        codigoLido => {
-
-            const mensagem =
-                document.getElementById("mensagem");
-
-            if(!codigoLido.startsWith("78")){
-
-                mensagem.className =
-                    "mensagem-erro";
-
-                mensagem.innerText =
-                    "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
-
-                return;
-
-            }
-
-            if(bloqueado) return;
-
-            bloqueado = true;
-
-            document.getElementById("codigo").value =
-                codigoLido;
-
-            salvarCodigo(codigoLido);
-
-            mensagem.className =
-                "mensagem-sucesso";
-
-            mensagem.innerText =
-                "Produto registrado com sucesso.";
-
-            document.getElementById("codigoModal").innerText =
-                "Código: " + codigoLido;
-
-            document.getElementById("modal").style.display =
-                "flex";
-
-            scanner.stop();
-
-        }
-
-    )
-
-    .catch(() => {
-
-        const mensagem =
-            document.getElementById("mensagem");
-
-        mensagem.className =
-            "mensagem-erro";
+      if (!codigoLido.startsWith("78")) {
+        reader.classList.remove("leitura-ok");
+        reader.classList.add("leitura-erro");
 
         mensagem.innerText =
-            "Erro ao abrir a câmera.";
+          "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
 
-    });
-
-}
-
-function continuarBipagem(){
-
-    document.getElementById("modal").style.display =
-        "none";
-
-    document.getElementById("codigo").value =
-        "";
-
-    bloqueado = false;
-
-    iniciarScanner();
-
-}
-
-function salvarManual(){
-
-    const codigo =
-        document.getElementById("codigo")
-            .value
-            .trim();
-
-    const mensagem =
-        document.getElementById("mensagem");
-
-    if(codigo === ""){
-
-        mensagem.className =
-            "mensagem-erro";
-
-        mensagem.innerText =
-            "Digite um código.";
+        setTimeout(() => {
+          reader.classList.remove("leitura-erro");
+          mensagem.innerText = "";
+        }, 1500);
 
         return;
+      }
 
+      if (bloqueado) return;
+
+      bloqueado = true;
+
+      reader.classList.remove("leitura-erro");
+      reader.classList.add("leitura-ok");
+
+      document.getElementById("codigo").value = codigoLido;
+
+      salvarCodigo(codigoLido);
+
+      document.getElementById("codigoModal").innerText =
+        "Código: " + codigoLido;
+
+      document.getElementById("modal").style.display = "flex";
+
+      scanner.stop();
     }
+  ).catch(() => {
+    const reader = document.getElementById("reader");
+    const mensagem = document.getElementById("mensagem");
 
-    if(!codigo.startsWith("78")){
+    reader.classList.add("leitura-erro");
+    mensagem.innerText =
+      "Erro ao abrir câmera. Permita o acesso no navegador.";
+  });
+}
 
-        mensagem.className =
-            "mensagem-erro";
+function continuarBipagem() {
+  const reader = document.getElementById("reader");
 
-        mensagem.innerText =
-            "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
+  document.getElementById("modal").style.display = "none";
+  document.getElementById("codigo").value = "";
+  document.getElementById("mensagem").innerText = "";
 
-        return;
+  reader.classList.remove("leitura-ok");
+  reader.classList.remove("leitura-erro");
 
-    }
+  bloqueado = false;
 
-    salvarCodigo(codigo);
+  iniciarScanner();
+}
 
-    mensagem.className =
-        "mensagem-sucesso";
+function salvarManual() {
+  const codigo = document.getElementById("codigo").value.trim();
+  const reader = document.getElementById("reader");
+  const mensagem = document.getElementById("mensagem");
+
+  if (codigo === "") {
+    reader.classList.add("leitura-erro");
+    mensagem.innerText = "Digite um código.";
+    return;
+  }
+
+  if (!codigo.startsWith("78")) {
+    reader.classList.remove("leitura-ok");
+    reader.classList.add("leitura-erro");
 
     mensagem.innerText =
-        "Produto registrado com sucesso.";
+      "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
+    return;
+  }
 
-    document.getElementById("codigoModal").innerText =
-        "Código: " + codigo;
+  reader.classList.remove("leitura-erro");
+  reader.classList.add("leitura-ok");
 
-    document.getElementById("modal").style.display =
-        "flex";
+  salvarCodigo(codigo);
 
+  document.getElementById("codigoModal").innerText =
+    "Código: " + codigo;
+
+  document.getElementById("modal").style.display = "flex";
 }
 
 window.onload = iniciarScanner;
-
 </script>
 
 </body>
