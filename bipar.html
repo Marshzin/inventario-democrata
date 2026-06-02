@@ -1,114 +1,272 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bipar Produtos</title>
-  <link rel="stylesheet" href="css/style.css">
-  <script src="https://unpkg.com/html5-qrcode"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Bipar Produtos</title>
+
+<link rel="stylesheet" href="css/style.css">
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+
+.mensagem-sucesso{
+    color:#4CAF50;
+    font-weight:bold;
+}
+
+.mensagem-erro{
+    color:#ff4d4d;
+    font-weight:bold;
+}
+
+#reader{
+    width:100%;
+    margin:20px 0;
+    overflow:hidden;
+    border-radius:10px;
+}
+
+#modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.7);
+    align-items:center;
+    justify-content:center;
+    z-index:9999;
+}
+
+.modal-box{
+    background:white;
+    color:black;
+    padding:25px;
+    border-radius:12px;
+    width:85%;
+    max-width:320px;
+    text-align:center;
+}
+
+</style>
+
 </head>
+
 <body>
 
 <div class="container">
-  <h1>Bipar Produtos</h1>
-  <p>Aponte a câmera para o código de barras iniciado por 78.</p>
 
-  <div id="reader"></div>
+    <h1>Bipar Produtos</h1>
 
-  <input type="text" id="codigo" placeholder="Código lido">
+    <p>Aponte a câmera para o código de barras.</p>
 
-  <button class="btn" onclick="salvarManual()">Salvar Manualmente</button>
+    <div id="reader"></div>
 
-  <p id="mensagem"></p>
+    <input
+        type="text"
+        id="codigo"
+        placeholder="Código lido">
 
-  <a href="index.html" class="voltar">Voltar</a>
+    <button
+        class="btn"
+        onclick="salvarManual()">
+
+        Salvar Manualmente
+
+    </button>
+
+    <p id="mensagem"></p>
+
+    <a href="index.html" class="voltar">
+        Voltar
+    </a>
+
 </div>
 
 <div id="modal">
-  <div class="modal-box">
-    <h2>Código lido com sucesso!</h2>
-    <p id="codigoModal"></p>
-    <button class="btn" onclick="continuarBipagem()">OK</button>
-  </div>
+
+    <div class="modal-box">
+
+        <h2>Código lido com sucesso!</h2>
+
+        <p id="codigoModal"></p>
+
+        <button
+            class="btn"
+            onclick="continuarBipagem()">
+
+            OK
+
+        </button>
+
+    </div>
+
 </div>
 
 <script src="js/app.js"></script>
 
 <script>
+
 let scanner;
 let bloqueado = false;
 
-function iniciarScanner() {
-  scanner = new Html5Qrcode("reader");
+function iniciarScanner(){
 
-  scanner.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: { width: 300, height: 130 },
-      formatsToSupport: [
-        Html5QrcodeSupportedFormats.EAN_13,
-        Html5QrcodeSupportedFormats.EAN_8,
-        Html5QrcodeSupportedFormats.UPC_A,
-        Html5QrcodeSupportedFormats.UPC_E,
-        Html5QrcodeSupportedFormats.CODE_128,
-        Html5QrcodeSupportedFormats.CODE_39
-      ]
-    },
-    codigoLido => {
-      if (!codigoLido.startsWith("78")) {
-        document.getElementById("mensagem").innerText =
-          "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
+    scanner = new Html5Qrcode("reader");
+
+    scanner.start(
+
+        {
+            facingMode:"environment"
+        },
+
+        {
+            fps:10,
+
+            qrbox:{
+                width:300,
+                height:130
+            },
+
+            formatsToSupport:[
+
+                Html5QrcodeSupportedFormats.EAN_13,
+                Html5QrcodeSupportedFormats.EAN_8,
+                Html5QrcodeSupportedFormats.UPC_A,
+                Html5QrcodeSupportedFormats.UPC_E,
+                Html5QrcodeSupportedFormats.CODE_128,
+                Html5QrcodeSupportedFormats.CODE_39
+
+            ]
+
+        },
+
+        codigoLido => {
+
+            const mensagem =
+                document.getElementById("mensagem");
+
+            if(!codigoLido.startsWith("78")){
+
+                mensagem.className =
+                    "mensagem-erro";
+
+                mensagem.innerText =
+                    "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
+
+                return;
+
+            }
+
+            if(bloqueado) return;
+
+            bloqueado = true;
+
+            document.getElementById("codigo").value =
+                codigoLido;
+
+            salvarCodigo(codigoLido);
+
+            mensagem.className =
+                "mensagem-sucesso";
+
+            mensagem.innerText =
+                "Produto registrado com sucesso.";
+
+            document.getElementById("codigoModal").innerText =
+                "Código: " + codigoLido;
+
+            document.getElementById("modal").style.display =
+                "flex";
+
+            scanner.stop();
+
+        }
+
+    )
+
+    .catch(() => {
+
+        const mensagem =
+            document.getElementById("mensagem");
+
+        mensagem.className =
+            "mensagem-erro";
+
+        mensagem.innerText =
+            "Erro ao abrir a câmera.";
+
+    });
+
+}
+
+function continuarBipagem(){
+
+    document.getElementById("modal").style.display =
+        "none";
+
+    document.getElementById("codigo").value =
+        "";
+
+    bloqueado = false;
+
+    iniciarScanner();
+
+}
+
+function salvarManual(){
+
+    const codigo =
+        document.getElementById("codigo")
+            .value
+            .trim();
+
+    const mensagem =
+        document.getElementById("mensagem");
+
+    if(codigo === ""){
+
+        mensagem.className =
+            "mensagem-erro";
+
+        mensagem.innerText =
+            "Digite um código.";
+
         return;
-      }
 
-      if (bloqueado) return;
-
-      bloqueado = true;
-
-      document.getElementById("codigo").value = codigoLido;
-      salvarCodigo(codigoLido);
-
-      document.getElementById("codigoModal").innerText =
-        "Código: " + codigoLido;
-
-      document.getElementById("modal").style.display = "flex";
-      document.getElementById("mensagem").innerText = "Produto registrado.";
-
-      scanner.stop();
     }
-  ).catch(() => {
-    document.getElementById("mensagem").innerText =
-      "Erro ao abrir câmera. Permita o acesso no navegador.";
-  });
-}
 
-function continuarBipagem() {
-  document.getElementById("modal").style.display = "none";
-  document.getElementById("codigo").value = "";
-  bloqueado = false;
-  iniciarScanner();
-}
+    if(!codigo.startsWith("78")){
 
-function salvarManual() {
-  const codigo = document.getElementById("codigo").value.trim();
+        mensagem.className =
+            "mensagem-erro";
 
-  if (codigo === "") {
-    alert("Digite ou bipe um código.");
-    return;
-  }
+        mensagem.innerText =
+            "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
 
-  salvarCodigo(codigo);
+        return;
 
-  if (!codigo.startsWith("78")) return;
+    }
 
-  document.getElementById("codigoModal").innerText =
-    "Código: " + codigo;
+    salvarCodigo(codigo);
 
-  document.getElementById("modal").style.display = "flex";
+    mensagem.className =
+        "mensagem-sucesso";
+
+    mensagem.innerText =
+        "Produto registrado com sucesso.";
+
+    document.getElementById("codigoModal").innerText =
+        "Código: " + codigo;
+
+    document.getElementById("modal").style.display =
+        "flex";
+
 }
 
 window.onload = iniciarScanner;
+
 </script>
 
 </body>
