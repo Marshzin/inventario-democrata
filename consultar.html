@@ -5,18 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Consultar Inventário</title>
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
 
 <div class="container">
-
   <h1>Consultar Inventário</h1>
 
-  <input
-    type="text"
-    id="pesquisa"
-    placeholder="Pesquisar código">
+  <input type="text" id="pesquisa" placeholder="Pesquisar código ou produto">
 
   <h3 id="total">Total de peças: 0</h3>
 
@@ -24,16 +21,13 @@
     <p>Carregando...</p>
   </div>
 
-  <button class="btn" onclick="baixarTXT()">
-    Baixar TXT
-  </button>
+  <button class="btn" onclick="baixarTXT()">Baixar TXT</button>
 
   <button class="btn btn-secundario" onclick="limparInventario()">
     Limpar Inventário
   </button>
 
   <a href="index.html" class="voltar">Voltar</a>
-
 </div>
 
 <script type="module">
@@ -44,7 +38,7 @@
 
     document
       .getElementById("pesquisa")
-      .addEventListener("input", listarInventario);
+      .addEventListener("input", renderizarInventario);
   });
 </script>
 
