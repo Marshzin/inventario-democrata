@@ -6,7 +6,9 @@
   <title>Bipar Produtos</title>
 
   <link rel="stylesheet" href="css/style.css">
+
   <script src="https://unpkg.com/html5-qrcode"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 
 <body>
@@ -30,10 +32,7 @@
   <div class="modal-box">
     <h2>Código lido com sucesso!</h2>
     <p id="codigoModal"></p>
-
-    <button class="btn" onclick="continuarBipagem()">
-      OK
-    </button>
+    <button class="btn" onclick="continuarBipagem()">OK</button>
   </div>
 </div>
 
@@ -121,12 +120,19 @@ async function iniciarScanner() {
 
         await window.salvarCodigo(codigoLido);
 
-        document.getElementById("codigoModal").innerText =
-          "Código: " + codigoLido;
+        const descricao = await window.obterDescricaoProduto(codigoLido);
+
+        document.getElementById("codigoModal").innerHTML =
+          "<strong>Código:</strong> " + codigoLido + "<br><br>" +
+          "<strong>Produto:</strong> " + descricao;
 
         document.getElementById("modal").style.display = "flex";
 
         mensagem.innerText = "Produto registrado com sucesso.";
+
+        setTimeout(() => {
+          continuarBipagem();
+        }, 2000);
       }
     );
 
@@ -154,7 +160,6 @@ window.continuarBipagem = function() {
   setTimeout(() => {
     bloqueado = false;
     ultimoCodigo = "";
-
     mensagem.innerText = "Pronto para nova leitura.";
   }, 2000);
 };
@@ -173,14 +178,14 @@ window.salvarManual = async function() {
   if (!codigo.startsWith("78")) {
     reader.classList.remove("leitura-ok");
     reader.classList.add("leitura-erro");
-
     mensagem.innerText =
       "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
-
     return;
   }
 
   await window.salvarCodigo(codigo);
+
+  const descricao = await window.obterDescricaoProduto(codigo);
 
   bloqueado = true;
   ultimoCodigo = codigo;
@@ -188,12 +193,17 @@ window.salvarManual = async function() {
   reader.classList.remove("leitura-erro");
   reader.classList.add("leitura-ok");
 
-  document.getElementById("codigoModal").innerText =
-    "Código: " + codigo;
+  document.getElementById("codigoModal").innerHTML =
+    "<strong>Código:</strong> " + codigo + "<br><br>" +
+    "<strong>Produto:</strong> " + descricao;
 
   document.getElementById("modal").style.display = "flex";
 
   mensagem.innerText = "Produto registrado com sucesso.";
+
+  setTimeout(() => {
+    continuarBipagem();
+  }, 2000);
 };
 
 window.onload = iniciarScanner;
