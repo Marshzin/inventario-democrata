@@ -21,23 +21,37 @@ async function carregarPivot() {
     const arquivo = await resposta.arrayBuffer();
 
     const workbook = XLSX.read(arquivo, { type: "array" });
-    const primeiraAba = workbook.SheetNames[0];
-    const dados = XLSX.utils.sheet_to_json(workbook.Sheets[primeiraAba]);
+    const aba = workbook.SheetNames[0];
+
+    const dados = XLSX.utils.sheet_to_json(workbook.Sheets[aba]);
 
     produtosPivot = {};
 
     dados.forEach(item => {
-      const valores = Object.values(item);
-      const codigo = String(valores.find(v => String(v).startsWith("78")) || "").trim();
+      const codigos = String(item["Códigos de Barras"] || "").trim();
+      const descricao = String(item["Descrição Completa"] || "").trim();
 
-      if (codigo) {
-        produtosPivot[codigo] = item;
+      if (codigos && descricao) {
+        produtosPivot[codigos] = {
+          codigos: codigos,
+          descricao: descricao
+        };
       }
     });
 
   } catch (erro) {
-    console.log("pivot.xlsx não encontrado ou com erro.", erro);
+    console.error("Erro ao carregar pivot.xlsx:", erro);
   }
+}
+
+function buscarProduto(codigo) {
+  for (const chave in produtosPivot) {
+    if (chave.includes(codigo)) {
+      return produtosPivot[chave];
+    }
+  }
+
+  return null;
 }
 
 window.salvarCodigo = async function(codigo) {
@@ -108,27 +122,24 @@ window.renderizarInventario = function() {
   dadosInventario.forEach(item => {
     totalPecas += item.quantidade;
 
-    const infoProduto = produtosPivot[item.codigo] || {};
+    const produto = buscarProduto(item.codigo);
 
-    const textoBusca = JSON.stringify({
-      codigo: item.codigo,
-      ...infoProduto
-    }).toLowerCase();
+    const descricao = produto
+      ? produto.descricao
+      : "Produto não encontrado no pivot.xlsx";
 
-    if (pesquisa && !textoBusca.includes(pesquisa)) return;
+    const textoBusca = `${item.codigo} ${descricao}`.toLowerCase();
+
+    if (pesquisa && !textoBusca.includes(pesquisa)) {
+      return;
+    }
 
     encontrados++;
-
-    let detalhes = "";
-
-    Object.entries(infoProduto).forEach(([chave, valor]) => {
-      detalhes += `<small><strong>${chave}:</strong> ${valor}</small><br>`;
-    });
 
     lista.innerHTML += `
       <div class="item">
         <strong>Código:</strong> ${item.codigo}<br>
-        ${detalhes || "<small>Produto não encontrado no pivot.xlsx</small><br>"}
+        <strong>Produto:</strong> ${descricao}<br>
 
         <div class="controle-qtd">
           <button onclick="alterarQuantidade('${item.codigo}', -1)">-</button>
