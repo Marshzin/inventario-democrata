@@ -15,7 +15,7 @@
 
 <div class="container">
   <h1>Bipar Produtos</h1>
-  <p>Aponte a câmera para o código de barras iniciado por 78.</p>
+  <p>Aponte a câmera para o código de barras iniciado por 78 ou 79.</p>
 
   <div id="reader"></div>
 
@@ -42,6 +42,69 @@
 let scanner;
 let bloqueado = false;
 let ultimoCodigo = "";
+let timerModal = null;
+
+function codigoPermitido(codigo) {
+  return codigo.startsWith("78") || codigo.startsWith("79");
+}
+
+function mostrarErro(texto) {
+  const reader = document.getElementById("reader");
+  const mensagem = document.getElementById("mensagem");
+
+  reader.classList.remove("leitura-ok");
+  reader.classList.add("leitura-erro");
+
+  mensagem.innerText = texto;
+
+  setTimeout(() => {
+    reader.classList.remove("leitura-erro");
+    mensagem.innerText = "";
+  }, 2000);
+}
+
+async function registrarCodigo(codigo) {
+  const reader = document.getElementById("reader");
+  const mensagem = document.getElementById("mensagem");
+
+  if (!codigoPermitido(codigo)) {
+    mostrarErro("Código ignorado. Apenas códigos iniciados por 78 ou 79 são aceitos.");
+    return;
+  }
+
+  bloqueado = true;
+  ultimoCodigo = codigo;
+
+  const salvo = await window.salvarCodigo(codigo);
+
+  if (!salvo) {
+    bloqueado = false;
+    ultimoCodigo = "";
+    mostrarErro("Produto não encontrado no pivot.xlsx. Código não adicionado.");
+    return;
+  }
+
+  const descricao = await window.obterDescricaoProduto(codigo);
+
+  reader.classList.remove("leitura-erro");
+  reader.classList.add("leitura-ok");
+
+  document.getElementById("codigo").value = codigo;
+
+  document.getElementById("codigoModal").innerHTML =
+    "<strong>Código:</strong> " + codigo + "<br><br>" +
+    "<strong>Produto:</strong> " + descricao;
+
+  document.getElementById("modal").style.display = "flex";
+
+  mensagem.innerText = "Produto registrado com sucesso.";
+
+  if (timerModal) clearTimeout(timerModal);
+
+  timerModal = setTimeout(() => {
+    continuarBipagem();
+  }, 2000);
+}
 
 async function iniciarScanner() {
   const reader = document.getElementById("reader");
@@ -95,44 +158,7 @@ async function iniciarScanner() {
         if (bloqueado) return;
         if (codigoLido === ultimoCodigo) return;
 
-        if (!codigoLido.startsWith("78")) {
-          reader.classList.remove("leitura-ok");
-          reader.classList.add("leitura-erro");
-
-          mensagem.innerText =
-            "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
-
-          setTimeout(() => {
-            reader.classList.remove("leitura-erro");
-            mensagem.innerText = "";
-          }, 1500);
-
-          return;
-        }
-
-        ultimoCodigo = codigoLido;
-        bloqueado = true;
-
-        reader.classList.remove("leitura-erro");
-        reader.classList.add("leitura-ok");
-
-        document.getElementById("codigo").value = codigoLido;
-
-        await window.salvarCodigo(codigoLido);
-
-        const descricao = await window.obterDescricaoProduto(codigoLido);
-
-        document.getElementById("codigoModal").innerHTML =
-          "<strong>Código:</strong> " + codigoLido + "<br><br>" +
-          "<strong>Produto:</strong> " + descricao;
-
-        document.getElementById("modal").style.display = "flex";
-
-        mensagem.innerText = "Produto registrado com sucesso.";
-
-        setTimeout(() => {
-          continuarBipagem();
-        }, 2000);
+        await registrarCodigo(codigoLido);
       }
     );
 
@@ -148,6 +174,11 @@ async function iniciarScanner() {
 window.continuarBipagem = function() {
   const reader = document.getElementById("reader");
   const mensagem = document.getElementById("mensagem");
+
+  if (timerModal) {
+    clearTimeout(timerModal);
+    timerModal = null;
+  }
 
   document.getElementById("modal").style.display = "none";
   document.getElementById("codigo").value = "";
@@ -166,44 +197,15 @@ window.continuarBipagem = function() {
 
 window.salvarManual = async function() {
   const codigo = document.getElementById("codigo").value.trim();
-  const reader = document.getElementById("reader");
-  const mensagem = document.getElementById("mensagem");
 
   if (codigo === "") {
-    reader.classList.add("leitura-erro");
-    mensagem.innerText = "Digite um código.";
+    mostrarErro("Digite um código.");
     return;
   }
 
-  if (!codigo.startsWith("78")) {
-    reader.classList.remove("leitura-ok");
-    reader.classList.add("leitura-erro");
-    mensagem.innerText =
-      "Código ignorado. Apenas códigos iniciados por 78 são aceitos.";
-    return;
-  }
+  if (bloqueado) return;
 
-  await window.salvarCodigo(codigo);
-
-  const descricao = await window.obterDescricaoProduto(codigo);
-
-  bloqueado = true;
-  ultimoCodigo = codigo;
-
-  reader.classList.remove("leitura-erro");
-  reader.classList.add("leitura-ok");
-
-  document.getElementById("codigoModal").innerHTML =
-    "<strong>Código:</strong> " + codigo + "<br><br>" +
-    "<strong>Produto:</strong> " + descricao;
-
-  document.getElementById("modal").style.display = "flex";
-
-  mensagem.innerText = "Produto registrado com sucesso.";
-
-  setTimeout(() => {
-    continuarBipagem();
-  }, 2000);
+  await registrarCodigo(codigo);
 };
 
 window.onload = iniciarScanner;
