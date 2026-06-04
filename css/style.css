@@ -79,6 +79,35 @@ input {
   text-align: left;
 }
 
+.item small {
+  color: #ccc;
+  line-height: 1.5;
+}
+
+.controle-qtd {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 12px;
+}
+
+.controle-qtd button {
+  width: 45px;
+  height: 38px;
+  border: none;
+  border-radius: 8px;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.controle-qtd span {
+  font-size: 20px;
+  font-weight: bold;
+  color: #d6a354;
+}
+
 .voltar {
   display: block;
   color: #d6a354;
